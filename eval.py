@@ -1,6 +1,3 @@
-
-
-
 from voc_dataset import VOCDetection
 from config import opt
 import numpy as np
@@ -19,12 +16,7 @@ from voc_dataset import VOC_LABELS
 import tqdm
 import os
 import argparse
-
 from lib.voc_eval import voc_eval
-
-
-
-
 
 parser = argparse.ArgumentParser()
 
@@ -43,10 +35,6 @@ args = parser.parse_args()
 output_dir = args.save_folder
 checkpoint = args.model
 
-
-
-
-
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 voc_root = opt.VOC_ROOT
@@ -54,11 +42,6 @@ annopath = os.path.join(voc_root, 'VOC2007', 'Annotations', "%s.xml")  #真实�
 imgpath = os.path.join(voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')    #图片所在的地方
 imgsetpath = os.path.join(voc_root, 'VOC2007', 'ImageSets', 'Main', '{:s}.txt')   #测试集的txt文件存在的地方
 cachedir = os.path.join( os.getcwd(), 'annotations_cache')    #暂存这些信息的地方
-
-
-
-
-
 
 if __name__ == '__main__': 
     
@@ -114,16 +97,12 @@ if __name__ == '__main__':
         gt_boxes[:, 2] = gt_boxes[:, 2] * w
         gt_boxes[:, 3] = gt_boxes[:, 3] * h
 
-
         for box, label, score in zip(gt_boxes, gt_labels, gt_confs):
             print(img_name, "{:.3f}".format(score), "{:.1f} {:.1f} {:.1f} {:.1f}".format(*box), file=files[label])
-
 
     for f in files:
         f.close()
     
-    
-
     print('start cal MAP.........')
     aps = []
     for f in os.listdir(output_dir):
@@ -134,7 +113,3 @@ if __name__ == '__main__':
         aps.append(ap)
 
     print('mean MAP is : ', np.mean(aps))
-    
-
-
-

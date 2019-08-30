@@ -1,73 +1,60 @@
-
-
-
-
-
-class Config:
-
-	
-    #存放voc数据集的地址
+class Config:	
+    #Store the address of the voc data set
     VOC_ROOT = '/Users/liuhaoxin/data/VOC/VOCdevkit'
 
-    #分类的类别数(包括了背景算一类)
+    #Number of categories classified (including background count)
     num_classes = 21
 
-    #如果你想从已经训练的模型继续训练则取消注释下一行并填入你继续训练模型的名字,从头训练的话保持原样
+    #If you want to continue training from the already trained model,uncomment the next line and 
+    #fill in the name of the model you continue to train.If you train from the beginning, stay the same.
     #resume = 'weights/loss-2079.08.pth'
     resume = None
     
-    #下面是一些常用模型训练的参数,根据需要进行更改
-    
-    #学习率,学习率太大可能会导致损失nan
+    #Below are some of the parameters of the commonly used model training, which are changed as needed. 
+    #Learning rate, too high learning rate may lead to loss of nan
     lr = 0.001
-    #batch size大小,太大可能导致爆显存
+    #Batch size size, too large may cause explosion memory
     batch_size = 32 
     
-    #下面这两参数一般不用改,用于梯度加速和防止过拟合
+    #The following two parameters are generally not needed for gradient acceleration and over-fitting prevention.
     momentum = 0.9
     weight_decay = 5e-4
 
-    #训练多少个epcoch
+    #How many epcoch to train
     epoch = 100 
 
-    #这两个参数可以进行调节,lr_reduce_epoch是多少个epoch后学习率乘上gamma
-    #比如gamma为0.2,lr_reduce_epoch=30即每隔30个epoch，学习率降低5倍
+    #These two parameters can be adjusted, lr_reduce_epoch is how many epoch learning rate multiplied by gamma
+    #For example, gamma is 0.2, lr_reduce_epoch=30, ie every 30 epoch, the learning rate is reduced by 5 times.
     gamma = 0.2
     lr_reduce_epoch = 30
 
-
-    #模型保存的文件夹，以及预训练的网络权重
+    #Folders saved by the model, as well as pre-trained network weights
     save_folder = 'weights/'
     basenet = 'vgg16_reducedfc.pth'
 
-    #每训练多少个batch打印一次信息
+    #How many batches of training are printed once per message
     log_fn = 10 
 
+    #Negative sample ratio
+    neg_radio = 3  
 
-    #负样本比例
-    neg_radio = 3
-    
-
-    #ssd中的一些参数,以下参数是基于论文给出的，谨慎修改！！
-    
-    #输入图片的大小
+    #Some parameters in ssd, the following parameters are based on the paper, carefully modified! !
+    #Enter the size of the image
     min_size = 300
-    #ssd中共有6个特征层,它们的大小依次如下，用于anchor的生成
+    #There are 6 feature layers in ssd, and their sizes are as follows for the generation of anchor.
     grids = (38, 19, 10, 5, 3, 1)
-    #每个特征层anchor进行缩放的比例
+    #Proportion of scaling for each feature layer anchor
     aspect_ratios = ((2,), (2, 3), (2, 3), (2, 3), (2,), (2,))
-    #原图片大小(300)相较于特征层缩小了多少倍 比如(300 / 38 约等于8)
+    #How many times the original image size (300) is reduced compared to the feature layer, such as (300 / 38 is approximately equal to 8)
     steps = [s / 300 for s in (8, 16, 32, 64, 100, 300)]
-    #每一个特征层上面防止的anchor的大小，原则上是特征图越小放置越大
+    #The size of the anchor prevented on each feature layer is, in principle, the smaller the feature map, the larger the placement.
     sizes = [s / 300 for s in (30, 60, 111, 162, 213, 264, 315)] 
-    #每个特征图上anchor的数量,用于模型建造时候最后一层的channel的产生
+    #The number of anchors on each feature map, used to generate the channel of the last layer at the time of model construction
     anchor_num = [4, 6, 6, 6, 4, 4]
 
-    #图片每个通道上面的均值
+    #The mean value above each channel of the picture
     mean = (104, 117, 123)
-    #用于坐标编码的方差
+    #Variance for coordinate coding
     variance = (0.1, 0.2)
-
-
 
 opt = Config()

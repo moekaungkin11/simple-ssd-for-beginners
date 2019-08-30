@@ -1,7 +1,3 @@
-
-
-
-
 from config import opt
 import numpy as np
 from lib.model import SSD
@@ -9,15 +5,11 @@ import torch
 import torch.nn.functional as F
 import os
 from lib.utils import detection_collate
-
 from lib.multibox_encoder import MultiBoxEncoder
 from lib.ssd_loss import MultiBoxLoss
-
 from voc_dataset import VOCDetection
 
-
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
 
 def print_config(path):
     with open(path, 'r') as f:
@@ -36,8 +28,6 @@ def adjust_learning_rate(optimizer, gamma, step):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-
-
 if __name__ == '__main__':
 
     print_config('config.py')
@@ -54,7 +44,6 @@ if __name__ == '__main__':
         vgg_weights = torch.load(opt.save_folder + opt.basenet)
         print('Loading base network...')
         model.vgg.load_state_dict(vgg_weights)
-
      
     model.to(device)
     model.train()
@@ -92,9 +81,7 @@ if __name__ == '__main__':
             gt_boxes = torch.FloatTensor(gt_boxes).to(device)
             gt_labels = torch.LongTensor(gt_labels).to(device)
 
-
             p_loc, p_label = model(img)
-
 
             loc_loss, cls_loss = criterion(p_loc, p_label, gt_boxes, gt_labels)
 
@@ -115,6 +102,3 @@ if __name__ == '__main__':
 
         if (e+1) % 10 == 0:
             torch.save(model.state_dict(), os.path.join(opt.save_folder, 'loss-{:.2f}.pth'.format(total_loss)))
-
-
-

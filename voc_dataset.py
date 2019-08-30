@@ -1,18 +1,10 @@
-
-
-
-
-
-
 import torch
 import torch.utils.data as data
 import xml.etree.ElementTree as ET
 import numpy as np
-
 import os
 import cv2
 from config import opt
-
 from lib.augmentations import preproc_for_test, preproc_for_train
 
 VOC_LABELS = (
@@ -37,24 +29,16 @@ VOC_LABELS = (
         'train',
         'tvmonitor',
     )
-
-
-
 class VOCDetection(data.Dataset):
-
-
     def __init__(self, opt, image_sets=[['2007', 'trainval'], ['2012', 'trainval']], is_train=True):
-
-
-        #你的voc root
+        #your voc root
         self.root = opt.VOC_ROOT
-        #使用的数据集列表,每个数据集包括年份和使用的部分
+        #a list of data sets used, each data set including the year and the portion used
         self.image_sets = image_sets
         self.is_train = is_train
-        self.opt = opt    #我们需要知道在预处理的时候要将图片resize到多大以及减去的方差等信息
-    
+        self.opt = opt  #We need to know how much to resize the image and subtract the variance when preprocessing.
         self.ids = []
-        #遍历数据集将图片得路径加到id里面
+        #Traverse the data set to add the image path to the id
         for (year, name) in self.image_sets:
             root_path = os.path.join(self.root, 'VOC' + year)
             ano_file = os.path.join(root_path, 'ImageSets', 'Main', name + '.txt')
@@ -65,10 +49,6 @@ class VOCDetection(data.Dataset):
                     ano_path = os.path.join(root_path, 'Annotations', line + '.xml')
                     img_path = os.path.join(root_path, 'JPEGImages', line + '.jpg')
                     self.ids.append((img_path, ano_path))
-
-
-
-    
     
     def __getitem__(self, index):
         img_path, ano_path = self.ids[index]
@@ -78,23 +58,15 @@ class VOCDetection(data.Dataset):
         if self.is_train:
             image, boxes, labels = preproc_for_train(image, boxes, labels, opt.min_size, opt.mean)
             image = torch.from_numpy(image)
-           
-        
-        
+         
         target = np.concatenate([boxes, labels.reshape(-1,1)], axis=1)
-        
         return image, target
 
-
-
-    def get_annotations(self, path):
-        
+    def get_annotations(self, path):        
         tree = ET.parse(path)
-
-        #得到真实坐标和标签
+        #Get real coordinates and labels
         boxes = []
-        labels = []
-        
+        labels = []       
         for child in tree.getroot():
             if child.tag != 'object':
                 continue
@@ -104,19 +76,9 @@ class VOCDetection(data.Dataset):
                 float(bndbox.find(t).text) - 1
                 for t in ['xmin', 'ymin', 'xmax', 'ymax']
             ]
-
-
-            label = VOC_LABELS.index(child.find('name').text) 
-            
+            label = VOC_LABELS.index(child.find('name').text)         
             boxes.append(box)
             labels.append(label)
-
-
         return np.array(boxes), np.array(labels)
-            
-
-        
-
     def __len__(self):
         return len(self.ids)
-        

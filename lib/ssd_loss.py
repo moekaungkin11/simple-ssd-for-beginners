@@ -9,38 +9,38 @@ def hard_negtives(logits, labels, pos, neg_radio):
     logits (batch, n, 21)
     labels (batch, n, )
     pos (batch, n,)
-    
-    挑选出在这一个batch中损失最大的负样本,因为在ssd中负样本的数量非常多,如果我们随机挑选负样本来进行训练的话,模型将会很快收敛,判别能力会变差,所以我们要选择那些最难辨别的负样本来训练
-    '''
+    Pick out the largest negative sample in this batch, because the number of negative samples in ssd is very large.
+    If we randomly select negative samples for training, the model will converge quickly and the discriminating ability will be worse, 
+    so we Choose the most difficult to identify negative samples to train
+    '''
     
     num_batch, num_anchors, num_classes = logits.shape
     logits = logits.view(-1, num_classes)
     labels = labels.view(-1)
     
-    #得到该anchor对应类别的损失
+    #Get the loss of the corresponding category of the anchor
     losses = F.cross_entropy(logits, labels, reduction='none')
 
     losses = losses.view(num_batch, num_anchors)
 
-    #过滤掉正样本,因为我们只挖掘负样本
+    #Filter out positive samples because we only mine negative samples
     losses[pos] = 0
 
     #loss (batch, n)
-    #下面通过两个argsort可以使我们得到该某一损失在排序后应该存在的位置
-    #举例说明原来损失为(3,2,1,4)
-    #通过下面的操作可以得到(1,2,3,0)
-    #为什么呢？因为损失排序后为(4,3,2,1)
-    #而3排序后在1号位置,2排序后再2号位置,1排序后在3号位置,4排序后再0号位置
-    loss_idx = losses.argsort(1, descending=True)
+    #The following two argsorts allow us to get the position where the loss should exist after sorting.
+    #Example shows that the original loss is (3, 2, 1, 4)
+    #(1,2,3,0) can be obtained by the following operation
+    #why? Because the loss is sorted after (4,3,2,1)
+    #And after 3 sorting, in the 1st position, 2 sorting and then 2nd position, 1 sorting in the 3rd position, 
+    #4 sorting and then 0th position
+    loss_idx = losses.argsort(1, descending=True)
     rank = loss_idx.argsort(1) #(batch, n)
 
-    #通过得到batch每一个图片正样本的数量来根据比例为其选择负样本数量，最大不能超过anchors的数量
+    #By getting the number of positive samples for each picture of the batch, select the negative sample quantity according to the ratio, 
+    #and the maximum cannot exceed the number of anchors.
     num_pos = pos.long().sum(1, keepdim=True)
     num_neg = torch.clamp(neg_radio*num_pos, max=pos.shape[1]-1) #(batch, 1)
-    neg = rank < num_neg.expand_as(rank)
-    
-    
-    
+    neg = rank < num_neg.expand_as(rank)   
     return neg
     
 class MultiBoxLoss(nn.Module):
@@ -60,7 +60,7 @@ class MultiBoxLoss(nn.Module):
 
         num_batch = pred_loc.shape[0]
 
-        #挑选正样本来进行坐标回归
+        #Select positive samples for coordinate regression
         pos_idx = gt_label > 0
         pos_loc_idx = pos_idx.unsqueeze(2).expand_as(pred_loc)
         pred_loc_pos = pred_loc[pos_loc_idx].view(-1, 4)
@@ -69,12 +69,12 @@ class MultiBoxLoss(nn.Module):
         loc_loss = F.smooth_l1_loss(pred_loc_pos, gt_loc_pos, reduction='sum')
 
         
-        #进行困难负样本挖掘
+        #Difficult negative sample mining
         logits = pred_label.detach()
         labels = gt_label.detach()
         neg_idx = hard_negtives(logits, labels, pos_idx, self.neg_radio) #neg (batch, n)
 
-        #这里我们用于训练分类的是困难负样本和正样本 
+        #here, we use the difficult negative and positive samples for training classification.
         pos_cls_mask = pos_idx.unsqueeze(2).expand_as(pred_label)
         neg_cls_mask = neg_idx.unsqueeze(2).expand_as(pred_label)
 

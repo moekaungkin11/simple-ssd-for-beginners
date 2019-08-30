@@ -64,11 +64,11 @@ def Extra():
 
 def Feature_extractor(vgg, extral, bboxes, num_classes):
     
-    #坐标和分类
+    #Coordinates and classification
     loc_layers = []
     conf_layers = []
     
-    #vgg的提取层
+    #vgg Extraction layer
     vgg_useful = [21, 33]
     
     for k, v in enumerate(vgg_useful):
@@ -77,8 +77,9 @@ def Feature_extractor(vgg, extral, bboxes, num_classes):
         conf_layers += [nn.Conv2d(vgg[v].out_channels,
                         bboxes[k] * num_classes, kernel_size=3, padding=1)]
     
-    #然后此时我们已经用掉了两个盒子，所以k从2开始,然后extra的提取层是每个2个一个所以简单的用enumerate(extra[1::2], 2)
-    #表示k从2开始,而extra从1开始，步伐为2
+    #Then we have used two boxes at this time, so k starts from 2,
+    #and then the extra extraction layer is 2 for each one, so it is simple to use enumerate(extra[1::2], 2)
+    #Indicates that k starts at 2, and extra starts at 1, with a pace of 2
     for k, v in enumerate(extral[1::2], 2):
         loc_layers += [nn.Conv2d(v.out_channels, bboxes[k]
                                  * 4, kernel_size=3, padding=1)]
@@ -98,7 +99,7 @@ class SSD(nn.Module):
         super(SSD, self).__init__()
 
         self.num_classes = num_classes
-        self.bboxes = bboxes      #每个特征提取处的盒子数量
+        self.bboxes = bboxes      #Number of boxes at each feature extraction
 
         self.vgg_list = VGG()
         self.extra_list = Extra()
@@ -108,7 +109,7 @@ class SSD(nn.Module):
         self.L2Norm = L2Norm(512, 20)
 
 
-        #将list转化为ModuleList使得其被包装成Module对象
+        #Convert list to ModuleList so that it is wrapped into a Module object
         self.vgg = nn.ModuleList(self.vgg_list)
         self.extras = nn.ModuleList(self.extra_list)
         self.loc = nn.ModuleList(self.loc_layers_list)
@@ -116,18 +117,19 @@ class SSD(nn.Module):
 
 
 
-    #list里面的东西毫无关联，我们要在前向传播中建立它们之间的关系
+    #The things in the list are unrelated, we need to establish the relationship between them in the forward propagation.
 
     def forward(self, x):
 
-        #首先我们要在前向传播的过程中将特征提取层的输出保存下来，然后才能通过loc_layer和conf_layer去作用它们
-        #同时我们想将输出的位置坐标和类别概率存储起来
+        #First we need to save the output of the feature extraction layer in the forward propagation process before
+        #we can use loc_layer and conf_layer to work on them.
+        #At the same time we want to store the position coordinates and class probabilities of the output.
         source = []
         loc = []
         conf = []
 
 
-        #首先提取vgg的特征
+        #First extract the characteristics of vgg
         vgg_source = [22, 34]
         for i, v in enumerate(self.vgg):
             x = v(x)
@@ -139,25 +141,26 @@ class SSD(nn.Module):
                     s = x
                 source.append(s)
 
-        #提取extra的特征
+        #Extract the characteristics of extra
         for i, v in enumerate(self.extras):
             x = F.relu(v(x), inplace=True)
             if i % 2 == 1:
                 source.append(x)
 
 
-        #对于每个特征图提取特征
+        #Extract features for each feature map
         for s, l, c in zip(source, self.loc, self.conf):
-            #输出是c,w,h的形式,转换成w,h,c的形式,pytorch中转置后用contiguous来使得内存连续
+            #The output is in the form of c, w, h, converted into the form of w, h, c. After transpose in pytorch,
+            #use contiguous to make the memory continuous.
             loc.append(l(s).permute(0, 2, 3, 1).contiguous())
             conf.append(c(s).permute(0, 2, 3, 1).contiguous())
 
-        #因为这里的loc和conf是list所以我们将他转换为tensor
+        #Because loc and conf are lists here, we convert them to tensor
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
 
 
-        #然后将位置和类别展平，这样得到的数据大小是
+        #Then flatten the location and category so that the resulting data size is
         #loc  -- (batch, num_box*w*h, 4)
         #conf -- (batch, num_box*w*h, num_classes)
 
